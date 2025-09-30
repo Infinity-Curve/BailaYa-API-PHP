@@ -1,0 +1,43 @@
+# Composer dependencies
+/vendor/
+
+# Output / build artifacts
+/build/
+/dist/
+/cache/
+/var/
+
+# Logs
+*.log
+php_errors.log
+
+# Environment variables
+.env
+.env.*.local
+
+# PHPUnit / test artifacts
+.phpunit.result.cache
+/coverage/
+/reports/
+
+# IDE/editor settings
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# PHPStan / Psalm / other analysis tools
+.phpstan.cache
+/psalm-cache/
+
+# Misc archives
+*.tgz
+*.tar.gz
+*.zip
+
+# Lock files
+composer.lock
