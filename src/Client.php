@@ -127,7 +127,7 @@ final class Client
         $id = $this->requireStudioId($overrideId);
         $base = rtrim($this->baseUrl, '/') . "/studio/{$id}/classes";
 
-        $url = $from ? $base . '?from=' . rawurlencode(Date::formatUTCDate($from)) : $base;
+        $url = $from ? $base . '?from=' . rawurlencode(Date::formatIsoInstant($from)) : $base;
         $rawList = $this->getJson($url)['data'];
 
         $out = [];
@@ -146,7 +146,7 @@ final class Client
         }
 
         $base = rtrim($this->baseUrl, '/') . "/studio/{$id}/classes/" . rawurlencode($typeName);
-        $url = $from ? $base . '?from=' . rawurlencode(Date::formatUTCDate($from)) : $base;
+        $url = $from ? $base . '?from=' . rawurlencode(Date::formatIsoInstant($from)) : $base;
 
         $rawList = $this->getJson($url)['data'];
 
@@ -162,7 +162,7 @@ final class Client
     {
         $id = $this->requireStudioId($overrideId);
         $base = rtrim($this->baseUrl, '/') . "/studio/{$id}/events";
-        $url = $from ? $base . '?from=' . rawurlencode(Date::formatUTCDate($from)) : $base;
+        $url = $from ? $base . '?from=' . rawurlencode(Date::formatIsoInstant($from)) : $base;
 
         $rawList = $this->getJson($url)['data'];
 
@@ -173,3 +173,4 @@ final class Client
         return $out;
     }
 }
+
