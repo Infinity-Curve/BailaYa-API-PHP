@@ -139,7 +139,7 @@ final class ClientGetEventsTest extends TestCase
         $request = $history[0]['request'];
 
         $this->assertSame(
-            self::BASE . '/studio/' . self::STUDIO_ID . '/events?from=2025-08-01',
+            self::BASE . '/studio/' . self::STUDIO_ID . '/events?from=2025-08-01T00%3A00%3A00.000Z',
             (string)$request->getUri()
         );
     }

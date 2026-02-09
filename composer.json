@@ -1,8 +1,11 @@
 {
     "name": "bailaya/core",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "A PHP client for accessing the BailaYa public API",
     "type": "library",
+    "scripts": {
+        "test": "phpunit"
+    },
     "require": {
         "vlucas/phpdotenv": "^5.6",
         "guzzlehttp/guzzle": "^7.10"
