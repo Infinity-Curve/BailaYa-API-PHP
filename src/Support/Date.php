@@ -28,4 +28,10 @@ final class Date
     {
         return $dt->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d');
     }
+
+    /** Format ISO instant as UTC timestamp. */
+    public static function formatIsoInstant(DateTimeImmutable $dt): string
+    {
+        return $dt->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s.v\Z');
+    }
 }
