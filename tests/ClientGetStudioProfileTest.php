@@ -28,6 +28,7 @@ final class ClientGetStudioProfileTest extends TestCase
             'studioSize' => 100,
             'website' => 'https://x.com',
             'yearEstablished' => 2000,
+            'timezone' => 'America/Mexico_City',
             'studioTypes' => [
                 [
                     'name' => 'Salsa',
@@ -142,3 +143,4 @@ final class ClientGetStudioProfileTest extends TestCase
         $client->getStudioProfile();
     }
 }
+
