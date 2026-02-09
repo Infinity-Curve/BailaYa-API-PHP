@@ -68,8 +68,10 @@ final class StudioProfile implements \JsonSerializable
             'studioSize' => $this->studioSize,
             'website' => $this->website,
             'yearEstablished' => $this->yearEstablished,
+            'timezone' => $this->timezone,
             'studioTypes' => $this->studioTypes,
         ];
     }
 }
+
 
