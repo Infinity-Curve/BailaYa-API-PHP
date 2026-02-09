@@ -48,7 +48,7 @@ final class StudioProfile implements \JsonSerializable
             studioSize: isset($raw['studioSize']) ? (int)$raw['studioSize'] : null,
             website: $raw['website'] ?? null,
             yearEstablished: isset($raw['yearEstablished']) ? (int)$raw['yearEstablished'] : null,
-            timezone: $raw['timezone'] ?? null,
+            timezone: $raw['timezone'],
             studioTypes: $types,
         );
     }
@@ -73,5 +73,6 @@ final class StudioProfile implements \JsonSerializable
         ];
     }
 }
+
 
 
