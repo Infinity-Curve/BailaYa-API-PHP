@@ -23,15 +23,10 @@ final class Date
         return new DateTimeImmutable($value);
     }
 
-    /** Format to YYYY-MM-DD using UTC calendar. */
-    public static function formatUTCDate(DateTimeImmutable $dt): string
-    {
-        return $dt->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d');
-    }
-
     /** Format ISO instant as UTC timestamp. */
     public static function formatIsoInstant(DateTimeImmutable $dt): string
     {
         return $dt->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s.v\Z');
     }
 }
+
