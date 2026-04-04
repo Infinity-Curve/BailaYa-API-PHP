@@ -10,7 +10,7 @@ final class StudioPackage implements \JsonSerializable
     /**
      * @param array<string,string> $description
      *
-     * To build the purchase URL use: {appUrl}/packages/{id}
+     * To build the purchase URL use: {appUrl}/buy/{id}
      */
     public function __construct(
         public readonly string $id,

@@ -179,7 +179,7 @@ final class Client
      * Retrieves active group-class packages available for purchase at a studio,
      * ordered by price ascending.
      *
-     * To build the purchase URL for a package use: {appUrl}/packages/{package->id}
+     * To build the purchase URL for a package use: {appUrl}/buy/{package->id}
      *
      * @return list<StudioPackageDto>
      */
