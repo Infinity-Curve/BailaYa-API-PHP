@@ -1,6 +1,6 @@
 {
     "name": "bailaya/core",
-    "version": "1.2.4",
+    "version": "1.2.5",
     "description": "A PHP client for accessing the BailaYa public API",
     "type": "library",
     "scripts": {
