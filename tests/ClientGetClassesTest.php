@@ -29,6 +29,7 @@ final class ClientGetClassesTest extends TestCase
                 'price' => 20,
                 'capacity' => 20,
                 'allowPackages' => true,
+                'description' => ['en' => 'Feel the rhythm', 'es' => 'Siente el ritmo'],
                 'instructor' => [
                     'id' => 'instructor-1',
                     'name' => 'Alice',
@@ -71,7 +72,7 @@ final class ClientGetClassesTest extends TestCase
         ]);
     }
 
-    /** Verifies mapping + DateTime conversion */
+    /** Verifies mapping + DateTime conversion + description field */
     public function testParsesAndMapsStudioClassDatesIntoDateObjects(): void
     {
         $payload = $this->rawClasses();
@@ -89,6 +90,13 @@ final class ClientGetClassesTest extends TestCase
         // 'YYYY-MM-DD' -> UTC midnight
         $this->assertSame('2025-08-01', $classes[0]->date->format('Y-m-d'));
         $this->assertSame('+00:00', $classes[0]->date->format('P'));
+        // description array preserved
+        $this->assertSame(['en' => 'Feel the rhythm', 'es' => 'Siente el ritmo'], $classes[0]->description);
+        // nullable fields present
+        $this->assertSame('Room A', $classes[0]->room);
+        $this->assertSame(20.0, (float)$classes[0]->price);
+        $this->assertSame(20, $classes[0]->capacity);
+        $this->assertTrue($classes[0]->allowPackages);
 
         // ISO string preserved as instant
         $this->assertSame('Bachata', $classes[1]->name);
@@ -96,6 +104,41 @@ final class ClientGetClassesTest extends TestCase
 
         // null instructor maps to null
         $this->assertNull($classes[1]->instructor);
+        // description absent -> null
+        $this->assertNull($classes[1]->description);
+    }
+
+    /** nullable room/price/capacity/allowPackages/description default to null when absent */
+    public function testNullableFieldsDefaultToNullWhenAbsent(): void
+    {
+        $payload = [
+            [
+                'id' => 'class-min',
+                'name' => 'Merengue',
+                'dayOfWeek' => 'wednesday',
+                'startTime' => '10:00',
+                'endTime' => '11:00',
+                'level' => 'All',
+                'date' => '2025-09-03',
+                'instructor' => null,
+                // room, price, capacity, allowPackages, description intentionally absent
+            ],
+        ];
+
+        $mock = new MockHandler([
+            new Response(200, ['Content-Type' => 'application/json'], json_encode($payload, JSON_THROW_ON_ERROR)),
+        ]);
+
+        $client = $this->makeClientWithMock($mock);
+        $classes = $client->getClasses();
+
+        $this->assertCount(1, $classes);
+        $cls = $classes[0];
+        $this->assertNull($cls->room);
+        $this->assertNull($cls->price);
+        $this->assertNull($cls->capacity);
+        $this->assertNull($cls->allowPackages);
+        $this->assertNull($cls->description);
     }
 
     /** Confirms error thrown on non-2xx status */

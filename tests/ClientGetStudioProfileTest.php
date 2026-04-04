@@ -25,20 +25,25 @@ final class ClientGetStudioProfileTest extends TestCase
             'description' => '{"en":"Hello","es":"Hola"}',
             'logo' => 'logo.png',
             'phone' => '555',
+            'defaultCurrency' => 'MXN',
             'studioSize' => 100,
             'website' => 'https://x.com',
             'yearEstablished' => 2000,
             'timezone' => 'America/Mexico_City',
+            'whatsappEnabled' => true,
+            'whatsappPhone' => '+525512345678',
             'studioTypes' => [
                 [
                     'name' => 'Salsa',
                     'description' => '{"en":"Feel the Caribbean","es":"Siente el Caribe"}',
                     'image' => 'salsa.png',
+                    'isVisibleOnWeb' => true,
                 ],
                 [
                     'name' => 'Bachata',
                     'description' => '{"en":"Romantic dance","es":"Baile romántico"}',
                     'image' => 'bachata.png',
+                    'isVisibleOnWeb' => false,
                 ],
             ],
         ];
@@ -54,7 +59,7 @@ final class ClientGetStudioProfileTest extends TestCase
         ]);
     }
 
-    /** Parses JSON fields and maps studioTypes correctly */
+    /** Parses JSON fields, maps studioTypes, and maps new WhatsApp/currency fields */
     public function testParsesJsonAndMapsStudioTypes(): void
     {
         $payload = $this->rawStudio();
@@ -71,6 +76,11 @@ final class ClientGetStudioProfileTest extends TestCase
         // Description parsed
         $this->assertSame(['en' => 'Hello', 'es' => 'Hola'], $profile->description);
 
+        // New scalar fields
+        $this->assertSame('MXN', $profile->defaultCurrency);
+        $this->assertTrue($profile->whatsappEnabled);
+        $this->assertSame('+525512345678', $profile->whatsappPhone);
+
         // StudioTypes parsed
         $this->assertCount(2, $profile->studioTypes);
         $this->assertSame('Salsa', $profile->studioTypes[0]->name);
@@ -79,6 +89,7 @@ final class ClientGetStudioProfileTest extends TestCase
             $profile->studioTypes[0]->description
         );
         $this->assertSame('salsa.png', $profile->studioTypes[0]->image);
+        $this->assertTrue($profile->studioTypes[0]->isVisibleOnWeb);
 
         $this->assertSame('Bachata', $profile->studioTypes[1]->name);
         $this->assertSame(
@@ -86,6 +97,25 @@ final class ClientGetStudioProfileTest extends TestCase
             $profile->studioTypes[1]->description
         );
         $this->assertSame('bachata.png', $profile->studioTypes[1]->image);
+        $this->assertFalse($profile->studioTypes[1]->isVisibleOnWeb);
+    }
+
+    /** whatsappEnabled defaults to false and whatsappPhone/defaultCurrency default to null when absent */
+    public function testWhatsappAndCurrencyDefaultsWhenAbsent(): void
+    {
+        $payload = $this->rawStudio();
+        unset($payload['whatsappEnabled'], $payload['whatsappPhone'], $payload['defaultCurrency']);
+
+        $mock = new MockHandler([
+            new Response(200, ['Content-Type' => 'application/json'], json_encode($payload, JSON_THROW_ON_ERROR)),
+        ]);
+
+        $client = $this->makeClientWithMock($mock);
+        $profile = $client->getStudioProfile();
+
+        $this->assertFalse($profile->whatsappEnabled);
+        $this->assertNull($profile->whatsappPhone);
+        $this->assertNull($profile->defaultCurrency);
     }
 
     /**

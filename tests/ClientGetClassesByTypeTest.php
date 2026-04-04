@@ -30,6 +30,7 @@ final class ClientGetClassesByTypeTest extends TestCase
                 'price' => 20,
                 'capacity' => 20,
                 'allowPackages' => true,
+                'description' => ['en' => 'Hot salsa', 'es' => 'Salsa caliente'],
                 'instructor' => [
                     'id' => 'instructor-1',
                     'name' => 'Alice',
@@ -69,7 +70,7 @@ final class ClientGetClassesByTypeTest extends TestCase
         ]);
     }
 
-    /** Verifies mapping + DateTime conversion for filtered classes */
+    /** Verifies mapping + DateTime conversion + description for filtered classes */
     public function testParsesAndMapsTypeSpecificClassesCorrectly(): void
     {
         $payload = $this->rawClasses();
@@ -84,8 +85,44 @@ final class ClientGetClassesByTypeTest extends TestCase
         $this->assertCount(2, $classes);
         $this->assertInstanceOf(StudioClass::class, $classes[0]);
         $this->assertSame('Salsa', $classes[0]->name);
+        $this->assertSame(['en' => 'Hot salsa', 'es' => 'Salsa caliente'], $classes[0]->description);
         $this->assertInstanceOf(DateTimeImmutable::class, $classes[1]->date);
         $this->assertNull($classes[1]->instructor);
+        // description absent on class-2 -> null
+        $this->assertNull($classes[1]->description);
+    }
+
+    /** nullable room/price/capacity/allowPackages/description default to null when absent */
+    public function testNullableFieldsDefaultToNullWhenAbsent(): void
+    {
+        $payload = [
+            [
+                'id' => 'class-min',
+                'name' => 'Salsa',
+                'dayOfWeek' => 'saturday',
+                'startTime' => '12:00',
+                'endTime' => '13:00',
+                'level' => 'All',
+                'date' => '2025-10-04',
+                'instructor' => null,
+                // room, price, capacity, allowPackages, description intentionally absent
+            ],
+        ];
+
+        $mock = new MockHandler([
+            new Response(200, ['Content-Type' => 'application/json'], json_encode($payload, JSON_THROW_ON_ERROR)),
+        ]);
+
+        $client = $this->makeClientWithMock($mock);
+        $classes = $client->getClassesByType('salsa');
+
+        $this->assertCount(1, $classes);
+        $cls = $classes[0];
+        $this->assertNull($cls->room);
+        $this->assertNull($cls->price);
+        $this->assertNull($cls->capacity);
+        $this->assertNull($cls->allowPackages);
+        $this->assertNull($cls->description);
     }
 
     /** Throws if no studio ID configured */

@@ -20,10 +20,13 @@ final class StudioProfile implements \JsonSerializable
         public readonly array $description,
         public readonly ?string $logo,
         public readonly ?string $phone,
+        public readonly ?string $defaultCurrency,
         public readonly ?int $studioSize,
         public readonly ?string $website,
         public readonly ?int $yearEstablished,
         public readonly string $timezone,
+        public readonly bool $whatsappEnabled,
+        public readonly ?string $whatsappPhone,
         public readonly array $studioTypes,
     ) {}
 
@@ -45,10 +48,13 @@ final class StudioProfile implements \JsonSerializable
             description: Json::mapOrEmpty($raw['description'] ?? '{}'),
             logo: $raw['logo'] ?? null,
             phone: $raw['phone'] ?? null,
+            defaultCurrency: $raw['defaultCurrency'] ?? null,
             studioSize: isset($raw['studioSize']) ? (int)$raw['studioSize'] : null,
             website: $raw['website'] ?? null,
             yearEstablished: isset($raw['yearEstablished']) ? (int)$raw['yearEstablished'] : null,
             timezone: $raw['timezone'],
+            whatsappEnabled: isset($raw['whatsappEnabled']) ? (bool)$raw['whatsappEnabled'] : false,
+            whatsappPhone: $raw['whatsappPhone'] ?? null,
             studioTypes: $types,
         );
     }
@@ -65,10 +71,13 @@ final class StudioProfile implements \JsonSerializable
             'description' => $this->description,
             'logo' => $this->logo,
             'phone' => $this->phone,
+            'defaultCurrency' => $this->defaultCurrency,
             'studioSize' => $this->studioSize,
             'website' => $this->website,
             'yearEstablished' => $this->yearEstablished,
             'timezone' => $this->timezone,
+            'whatsappEnabled' => $this->whatsappEnabled,
+            'whatsappPhone' => $this->whatsappPhone,
             'studioTypes' => $this->studioTypes,
         ];
     }

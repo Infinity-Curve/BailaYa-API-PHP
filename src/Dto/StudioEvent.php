@@ -8,6 +8,7 @@ use DateTimeImmutable;
 
 final class StudioEvent implements \JsonSerializable
 {
+    /** @param array<string,string>|null $description */
     public function __construct(
         public readonly string $id,
         public readonly string $name,
@@ -15,11 +16,12 @@ final class StudioEvent implements \JsonSerializable
         public readonly string $startTime,
         public readonly string $endTime,
         public readonly string $level,
-        public readonly string $room,
+        public readonly ?string $room,
         public readonly DateTimeImmutable $date,
-        public readonly float|int $price,
-        public readonly int $capacity,
-        public readonly bool $allowPackages,
+        public readonly float|int|null $price,
+        public readonly ?int $capacity,
+        public readonly ?bool $allowPackages,
+        public readonly ?array $description,
         public readonly ?PersonRef $host,
     ) {}
 
@@ -33,11 +35,12 @@ final class StudioEvent implements \JsonSerializable
             startTime: $raw['startTime'],
             endTime: $raw['endTime'],
             level: $raw['level'],
-            room: $raw['room'],
+            room: $raw['room'] ?? null,
             date: Date::parseApiDateUTC($raw['date']),
-            price: $raw['price'],
-            capacity: (int)$raw['capacity'],
-            allowPackages: (bool)$raw['allowPackages'],
+            price: $raw['price'] ?? null,
+            capacity: isset($raw['capacity']) ? (int)$raw['capacity'] : null,
+            allowPackages: isset($raw['allowPackages']) ? (bool)$raw['allowPackages'] : null,
+            description: isset($raw['description']) && is_array($raw['description']) ? $raw['description'] : null,
             host: isset($raw['host']) && is_array($raw['host'])
                 ? PersonRef::fromArray($raw['host'])
                 : null,
@@ -58,6 +61,7 @@ final class StudioEvent implements \JsonSerializable
             'price' => $this->price,
             'capacity' => $this->capacity,
             'allowPackages' => $this->allowPackages,
+            'description' => $this->description,
             'host' => $this->host,
         ];
     }

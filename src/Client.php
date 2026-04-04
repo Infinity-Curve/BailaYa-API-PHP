@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace BailaYa;
 
 use BailaYa\Dto\Instructor as InstructorDto;
+use BailaYa\Dto\PrivateLessonInstructor as PrivateLessonInstructorDto;
+use BailaYa\Dto\StudioPackage as StudioPackageDto;
 use BailaYa\Dto\StudioClass as StudioClassDto;
 use BailaYa\Dto\StudioEvent as StudioEventDto;
 use BailaYa\Dto\StudioProfile as StudioProfileDto;
@@ -92,7 +94,7 @@ final class Client
     public function getStudioProfile(?string $overrideId = null): StudioProfileDto
     {
         $id = $this->requireStudioId($overrideId);
-        $url = rtrim($this->baseUrl, '/') . "/studio/{$id}/profile";
+        $url = rtrim($this->baseUrl, '/') . "/public/studio/{$id}/profile";
         $raw = $this->getJson($url)['data'];
         return StudioProfileDto::fromRaw($raw);
     }
@@ -102,7 +104,7 @@ final class Client
         if ($userId === '') {
             throw new \InvalidArgumentException('getUserProfile requires a userId argument');
         }
-        $url = rtrim($this->baseUrl, '/') . "/user/{$userId}/profile";
+        $url = rtrim($this->baseUrl, '/') . "/public/user/{$userId}/profile";
         $raw = $this->getJson($url)['data'];
         return UserProfileDto::fromRaw($raw);
     }
@@ -111,7 +113,7 @@ final class Client
     public function getInstructors(?string $overrideId = null): array
     {
         $id = $this->requireStudioId($overrideId);
-        $url = rtrim($this->baseUrl, '/') . "/studio/{$id}/instructors";
+        $url = rtrim($this->baseUrl, '/') . "/public/studio/{$id}/instructors";
         $rawList = $this->getJson($url)['data'];
 
         $out = [];
@@ -125,7 +127,7 @@ final class Client
     public function getClasses(?DateTimeImmutable $from = null, ?string $overrideId = null): array
     {
         $id = $this->requireStudioId($overrideId);
-        $base = rtrim($this->baseUrl, '/') . "/studio/{$id}/classes";
+        $base = rtrim($this->baseUrl, '/') . "/public/studio/{$id}/classes";
 
         $url = $from ? $base . '?from=' . rawurlencode(Date::formatIsoInstant($from)) : $base;
         $rawList = $this->getJson($url)['data'];
@@ -145,7 +147,7 @@ final class Client
             throw new \InvalidArgumentException('getClassesByType requires a typeName argument');
         }
 
-        $base = rtrim($this->baseUrl, '/') . "/studio/{$id}/classes/" . rawurlencode($typeName);
+        $base = rtrim($this->baseUrl, '/') . "/public/studio/{$id}/classes/" . rawurlencode($typeName);
         $url = $from ? $base . '?from=' . rawurlencode(Date::formatIsoInstant($from)) : $base;
 
         $rawList = $this->getJson($url)['data'];
@@ -161,7 +163,7 @@ final class Client
     public function getEvents(?DateTimeImmutable $from = null, ?string $overrideId = null): array
     {
         $id = $this->requireStudioId($overrideId);
-        $base = rtrim($this->baseUrl, '/') . "/studio/{$id}/events";
+        $base = rtrim($this->baseUrl, '/') . "/public/studio/{$id}/events";
         $url = $from ? $base . '?from=' . rawurlencode(Date::formatIsoInstant($from)) : $base;
 
         $rawList = $this->getJson($url)['data'];
@@ -169,6 +171,49 @@ final class Client
         $out = [];
         foreach ($rawList as $raw) {
             $out[] = StudioEventDto::fromRaw($raw);
+        }
+        return $out;
+    }
+
+    /**
+     * Retrieves active group-class packages available for purchase at a studio,
+     * ordered by price ascending.
+     *
+     * To build the purchase URL for a package use: {appUrl}/packages/{package->id}
+     *
+     * @return list<StudioPackageDto>
+     */
+    public function getPackages(?string $overrideId = null): array
+    {
+        $id = $this->requireStudioId($overrideId);
+        $url = rtrim($this->baseUrl, '/') . "/public/studio/{$id}/packages";
+        $rawList = $this->getJson($url)['data'];
+
+        $out = [];
+        foreach ($rawList as $raw) {
+            $out[] = StudioPackageDto::fromRaw($raw);
+        }
+        return $out;
+    }
+
+    /**
+     * Retrieves instructors in the studio who offer private lessons,
+     * including their weekly availability windows and per-duration pricing.
+     *
+     * To build the guest booking URL for an instructor use:
+     *   {appUrl}/{locale}/book/private-lesson/{instructor->id}
+     *
+     * @return list<PrivateLessonInstructorDto>
+     */
+    public function getPrivateLessonInstructors(?string $overrideId = null): array
+    {
+        $id = $this->requireStudioId($overrideId);
+        $url = rtrim($this->baseUrl, '/') . "/public/studio/{$id}/private-lesson-instructors";
+        $rawList = $this->getJson($url)['data'];
+
+        $out = [];
+        foreach ($rawList as $raw) {
+            $out[] = PrivateLessonInstructorDto::fromRaw($raw);
         }
         return $out;
     }

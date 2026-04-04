@@ -12,15 +12,17 @@ final class StudioType implements \JsonSerializable
         public readonly string $name,
         public readonly array $description,
         public readonly ?string $image = null,
+        public readonly bool $isVisibleOnWeb = false,
     ) {}
 
-    /** @param array{name:string,description:string,image?:string} $raw */
+    /** @param array{name:string,description:string,image?:string,isVisibleOnWeb?:bool} $raw */
     public static function fromRaw(array $raw): self
     {
         return new self(
             name: $raw['name'],
             description: Json::mapOrEmpty($raw['description'] ?? '{}'),
             image: $raw['image'] ?? null,
+            isVisibleOnWeb: isset($raw['isVisibleOnWeb']) ? (bool)$raw['isVisibleOnWeb'] : false,
         );
     }
 
@@ -30,6 +32,7 @@ final class StudioType implements \JsonSerializable
             'name' => $this->name,
             'description' => $this->description,
             'image' => $this->image,
+            'isVisibleOnWeb' => $this->isVisibleOnWeb,
         ];
     }
 }

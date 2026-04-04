@@ -29,6 +29,7 @@ final class ClientGetEventsTest extends TestCase
                 'price' => 20,
                 'capacity' => 20,
                 'allowPackages' => true,
+                'description' => ['en' => 'Social dancing', 'es' => 'Baile social'],
                 'host' => [
                     'id' => 'instructor-1',
                     'name' => 'Alice',
@@ -67,7 +68,7 @@ final class ClientGetEventsTest extends TestCase
         ]);
     }
 
-    /** Verifies mapping + DateTime conversion + null host */
+    /** Verifies mapping + DateTime conversion + null host + description field */
     public function testParsesAndMapsStudioEventDatesIntoDateObjects(): void
     {
         $payload = $this->rawEvents();
@@ -83,10 +84,52 @@ final class ClientGetEventsTest extends TestCase
         // 'YYYY-MM-DD' -> UTC midnight
         $this->assertSame('2025-08-01', $events[0]->date->format('Y-m-d'));
         $this->assertSame('+00:00', $events[0]->date->format('P'));
+        // description array preserved
+        $this->assertSame(['en' => 'Social dancing', 'es' => 'Baile social'], $events[0]->description);
+        // nullable fields present
+        $this->assertSame('Room A', $events[0]->room);
+        $this->assertSame(20.0, (float)$events[0]->price);
+        $this->assertSame(20, $events[0]->capacity);
+        $this->assertTrue($events[0]->allowPackages);
 
         // ISO string preserved as instant
         $this->assertSame('2025-08-02T19:00:00+00:00', $events[1]->date->format('c'));
         $this->assertNull($events[1]->host);
+        // description absent -> null
+        $this->assertNull($events[1]->description);
+    }
+
+    /** nullable room/price/capacity/allowPackages/description default to null when absent */
+    public function testNullableFieldsDefaultToNullWhenAbsent(): void
+    {
+        $payload = [
+            [
+                'id' => 'event-min',
+                'name' => 'Kizomba Night',
+                'dayOfWeek' => 'friday',
+                'startTime' => '21:00',
+                'endTime' => '23:00',
+                'level' => 'All',
+                'date' => '2025-09-05',
+                'host' => null,
+                // room, price, capacity, allowPackages, description intentionally absent
+            ],
+        ];
+
+        $mock = new MockHandler([
+            new Response(200, ['Content-Type' => 'application/json'], json_encode($payload, JSON_THROW_ON_ERROR)),
+        ]);
+
+        $client = $this->makeClientWithMock($mock);
+        $events = $client->getEvents();
+
+        $this->assertCount(1, $events);
+        $ev = $events[0];
+        $this->assertNull($ev->room);
+        $this->assertNull($ev->price);
+        $this->assertNull($ev->capacity);
+        $this->assertNull($ev->allowPackages);
+        $this->assertNull($ev->description);
     }
 
     /** Confirms error thrown on non-2xx */
