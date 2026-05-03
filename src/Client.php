@@ -5,6 +5,7 @@ namespace BailaYa;
 
 use BailaYa\Dto\Instructor as InstructorDto;
 use BailaYa\Dto\PrivateLessonInstructor as PrivateLessonInstructorDto;
+use BailaYa\Dto\PrivateLessonQuestion as PrivateLessonQuestionDto;
 use BailaYa\Dto\StudioPackage as StudioPackageDto;
 use BailaYa\Dto\StudioClass as StudioClassDto;
 use BailaYa\Dto\StudioEvent as StudioEventDto;
@@ -214,6 +215,29 @@ final class Client
         $out = [];
         foreach ($rawList as $raw) {
             $out[] = PrivateLessonInstructorDto::fromRaw($raw);
+        }
+        return $out;
+    }
+
+    /**
+     * Retrieves the studio-defined custom booking questions for private lessons.
+     *
+     * These are configured by the studio in the dashboard and shown to students
+     * during the private-lesson checkout flow. Most integrations only need this
+     * if you are mirroring the booking UI; the hosted checkout page already
+     * collects answers automatically.
+     *
+     * @return list<PrivateLessonQuestionDto>
+     */
+    public function getPrivateLessonQuestions(?string $overrideId = null): array
+    {
+        $id = $this->requireStudioId($overrideId);
+        $url = rtrim($this->baseUrl, '/') . "/public/studio/{$id}/private-lesson-questions";
+        $rawList = $this->getJson($url)['data'];
+
+        $out = [];
+        foreach ($rawList as $raw) {
+            $out[] = PrivateLessonQuestionDto::fromRaw($raw);
         }
         return $out;
     }
