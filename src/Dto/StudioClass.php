@@ -17,6 +17,7 @@ final class StudioClass implements \JsonSerializable
         public readonly string $endTime,
         public readonly string $level,
         public readonly ?string $room,
+        public readonly ?ClassLocation $location,
         public readonly DateTimeImmutable $date,
         public readonly float|int|null $price,
         public readonly ?int $capacity,
@@ -36,6 +37,9 @@ final class StudioClass implements \JsonSerializable
             endTime: $raw['endTime'],
             level: $raw['level'],
             room: $raw['room'] ?? null,
+            location: isset($raw['location']) && is_array($raw['location'])
+                ? ClassLocation::fromArray($raw['location'])
+                : null,
             date: Date::parseApiDateUTC($raw['date']),
             price: $raw['price'] ?? null,
             capacity: isset($raw['capacity']) ? (int)$raw['capacity'] : null,
@@ -57,6 +61,7 @@ final class StudioClass implements \JsonSerializable
             'endTime' => $this->endTime,
             'level' => $this->level,
             'room' => $this->room,
+            'location' => $this->location,
             'date' => $this->date->format(DATE_ATOM),
             'price' => $this->price,
             'capacity' => $this->capacity,
