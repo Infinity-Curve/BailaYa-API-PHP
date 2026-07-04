@@ -176,6 +176,105 @@ the decoded `data` payload. On a non-2xx response the client parses the
 `{ "error": { "code", "message" } }` envelope and throws a `RuntimeException`
 carrying the server message.
 
+## OAuth / Sign in with BailaYa
+
+BailaYa is an OpenID Connect provider, so you can let users **"Sign in with
+BailaYa"** and obtain tokens to call the API on their behalf. The issuer is
+`${baseUrl}/oidc` (default `https://www.bailaya.com/api/oidc`).
+
+The helpers live on `$client->oauth()` (or construct `BailaYa\OAuth` directly).
+**All clients must use PKCE (S256).** Public clients pass only the PKCE
+`codeVerifier`; confidential clients also pass a `clientSecret`.
+
+```php
+use BailaYa\OAuth;
+
+$oauth = new OAuth(); // or: (new BailaYa\Client())->oauth()
+```
+
+### Authorization code + PKCE
+
+```php
+// 1. Create a PKCE pair and stash the verifier + state (e.g. in $_SESSION).
+$pkce  = $oauth->createPkcePair();
+$state = bin2hex(random_bytes(16));
+$_SESSION['pkce_verifier'] = $pkce['codeVerifier'];
+$_SESSION['oauth_state']   = $state;
+
+// 2. Redirect the user to the authorize URL.
+$url = $oauth->buildAuthorizeUrl([
+    'clientId'      => 'your-client-id',
+    'redirectUri'   => 'https://yourapp.com/callback',
+    'scope'         => 'openid profile email offline_access classes:read classes:write',
+    'state'         => $state,
+    'codeChallenge' => $pkce['codeChallenge'],
+    // 'resource'   => 'https://www.bailaya.com/api', // optional audience
+    // 'prompt'     => 'consent',
+]);
+header('Location: ' . $url);
+
+// 3. On the redirect back, exchange the code (verify `state` first).
+$tokens = $oauth->exchangeCode([
+    'clientId'     => 'your-client-id',
+    'code'         => $_GET['code'],
+    'codeVerifier' => $_SESSION['pkce_verifier'],
+    'redirectUri'  => 'https://yourapp.com/callback',
+    // 'clientSecret' => '…', // confidential clients only
+]);
+// $tokens: ['access_token' => …, 'refresh_token' => …, 'id_token' => …,
+//           'token_type' => 'Bearer', 'expires_in' => …, 'scope' => …]
+
+// 4. Read the user's profile, or later refresh the access token.
+$me        = $oauth->getUserInfo($tokens['access_token']);
+$refreshed = $oauth->refreshToken([
+    'clientId'     => 'your-client-id',
+    'refreshToken' => $tokens['refresh_token'],
+]);
+```
+
+### Device authorization flow
+
+For input-constrained devices (TVs, CLIs):
+
+```php
+$device = $oauth->startDeviceAuthorization([
+    'clientId' => 'your-client-id',
+    'scope'    => 'openid offline_access classes:read',
+]);
+
+echo "Visit {$device['verification_uri']} and enter code {$device['user_code']}\n";
+// or open $device['verification_uri_complete'] directly
+
+// Blocks (polling with sleep) until the user approves, then returns tokens.
+$tokens = $oauth->pollDeviceToken([
+    'clientId'   => 'your-client-id',
+    'deviceCode' => $device['device_code'],
+    'interval'   => $device['interval'],
+]);
+```
+
+`pollDeviceToken()` handles `authorization_pending` (keep waiting) and
+`slow_down` (back off) automatically and throws on denial, expiry, or timeout
+(default 5 min, override with `maxWaitMs`).
+
+### Using an OIDC access token with the Management API
+
+An OIDC **access token** can be passed as the existing client `accessToken`
+option to call the `/v1/*` Management API. It is scope-limited to whatever the
+user granted, and multi-studio users must set `studioId` (sent as the
+`X-Studio-Id` header):
+
+```php
+$client = new BailaYa\Client([
+    'accessToken' => $tokens['access_token'],
+    'studioId'    => 'your-studio-id', // required for users in more than one studio
+]);
+$classes = $client->listClasses();
+```
+
+`getDiscoveryDocument()` is also available as a convenience for fetching the
+OpenID configuration.
+
 ## API Reference
 
 ### `new Client(array $options = [])`

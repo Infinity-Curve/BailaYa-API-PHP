@@ -31,6 +31,9 @@ final class Client
     private ?string $refreshToken;
     private HttpClient $http;
     private ?LoggerInterface $logger;
+    /** @var array<string,mixed> */
+    private array $guzzleOptions;
+    private ?OAuth $oauth = null;
 
     /**
      * @param array{
@@ -55,8 +58,24 @@ final class Client
         $this->apiKey = $options['apiKey'] ?? self::getEnv('BAILAYA_API_KEY');
         $this->accessToken = $options['accessToken'] ?? self::getEnv('BAILAYA_API_TOKEN');
         $this->refreshToken = $options['refreshToken'] ?? null;
-        $this->http = new HttpClient($options['guzzle'] ?? []);
+        $this->guzzleOptions = $options['guzzle'] ?? [];
+        $this->http = new HttpClient($this->guzzleOptions);
         $this->logger = $logger;
+    }
+
+    /**
+     * OAuth 2.0 / OpenID Connect helpers ("Sign in with BailaYa"), scoped to
+     * this client's base URL (issuer `${baseUrl}/oidc`). Lazily created.
+     */
+    public function oauth(): OAuth
+    {
+        if ($this->oauth === null) {
+            $this->oauth = new OAuth([
+                'baseUrl' => $this->baseUrl,
+                'guzzle' => $this->guzzleOptions,
+            ]);
+        }
+        return $this->oauth;
     }
 
     private static function getEnv(string $name): ?string
