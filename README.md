@@ -78,6 +78,21 @@ $bachata = $client->getClassesByType('bachata', new DateTimeImmutable('today'));
 $events = $client->getEvents(new DateTimeImmutable('2025-08-01'));
 ```
 
+### Get Locations
+
+Retrieves the studio's locations, **primary first**. No authentication required.
+The studio profile also exposes the same `locations` array.
+
+```php
+$locations = $client->getLocations();
+foreach ($locations as $loc) {
+    echo ($loc->isPrimary ? '★ ' : '  ') . $loc->name . PHP_EOL;
+}
+
+$profile = $client->getStudioProfile();
+echo count($profile->locations) . ' locations' . PHP_EOL;
+```
+
 ## Authentication (Management API)
 
 Beyond the read-only public endpoints, the client can talk to the authenticated
@@ -169,12 +184,39 @@ $package = $client->createPackage([
 ]);
 ```
 
+### Managing rooms and locations
+
+A room belongs to a location (defaults to the studio's primary). Promoting a
+location demotes the current primary; deleting a location reassigns its rooms
+and classes to the primary.
+
+```php
+$location = $client->createLocation([
+    'name'         => 'Condesa Studio',
+    'addressLine1' => 'Av. Ámsterdam 5',
+    'addressLine2' => 'Floor 2', // Suite / Unit / Floor
+    'city'         => 'CDMX',
+    'country'      => 'MX',
+]);
+
+$client->updateLocation($location->id, ['isPrimary' => true]);
+
+$room = $client->createRoom([
+    'name'             => 'Salon A',
+    'capacity'         => 20,
+    'studioLocationId' => $location->id,
+]);
+
+$client->deleteLocation($location->id);
+```
+
 Every management method maps the response into a typed DTO
 (`ManagementClass`, `ManagementStudent`, `ManagementTeamMember`,
-`ManagementPackage`). List methods return arrays of DTOs; delete methods return
-the decoded `data` payload. On a non-2xx response the client parses the
-`{ "error": { "code", "message" } }` envelope and throws a `RuntimeException`
-carrying the server message.
+`ManagementPackage`, `ManagementRoom`, `StudioLocation`). List methods return
+arrays of DTOs; delete methods return the decoded `data` payload. Rooms and
+locations require the `rooms:*` / `locations:*` API-key scopes. On a non-2xx
+response the client parses the `{ "error": { "code", "message" } }` envelope and
+throws a `RuntimeException` carrying the server message.
 
 ## OAuth / Sign in with BailaYa
 

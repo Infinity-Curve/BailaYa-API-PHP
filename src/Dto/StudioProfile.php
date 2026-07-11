@@ -9,6 +9,7 @@ final class StudioProfile implements \JsonSerializable
 {
     /** @param array<string,string> $description
      *  @param list<StudioType> $studioTypes
+     *  @param list<StudioLocation> $locations
      */
     public function __construct(
         public readonly string $id,
@@ -28,6 +29,7 @@ final class StudioProfile implements \JsonSerializable
         public readonly bool $whatsappEnabled,
         public readonly ?string $whatsappPhone,
         public readonly array $studioTypes,
+        public readonly array $locations = [],
     ) {}
 
     /** @param array<string,mixed> $raw RawStudioProfile */
@@ -36,6 +38,11 @@ final class StudioProfile implements \JsonSerializable
         $types = [];
         foreach (($raw['studioTypes'] ?? []) as $t) {
             $types[] = StudioType::fromRaw($t);
+        }
+
+        $locations = [];
+        foreach (($raw['locations'] ?? []) as $l) {
+            $locations[] = StudioLocation::fromRaw($l);
         }
 
         return new self(
@@ -56,6 +63,7 @@ final class StudioProfile implements \JsonSerializable
             whatsappEnabled: isset($raw['whatsappEnabled']) ? (bool)$raw['whatsappEnabled'] : false,
             whatsappPhone: $raw['whatsappPhone'] ?? null,
             studioTypes: $types,
+            locations: $locations,
         );
     }
 
@@ -79,6 +87,7 @@ final class StudioProfile implements \JsonSerializable
             'whatsappEnabled' => $this->whatsappEnabled,
             'whatsappPhone' => $this->whatsappPhone,
             'studioTypes' => $this->studioTypes,
+            'locations' => $this->locations,
         ];
     }
 }

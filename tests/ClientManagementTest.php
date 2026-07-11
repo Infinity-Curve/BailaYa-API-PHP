@@ -261,4 +261,83 @@ final class ClientManagementTest extends TestCase
         $this->assertSame(self::BASE . '/v1/classes/class-1?applyToSeries=true', (string)$request->getUri());
         $this->assertSame(['deleted' => 3], $result);
     }
+
+    /** createRoom POSTs to /v1/rooms and maps the returned DTO. */
+    public function testCreateRoom(): void
+    {
+        $history = [];
+        $mock = new MockHandler([
+            new Response(201, ['Content-Type' => 'application/json'], json_encode([
+                'data' => [
+                    'id' => 'room-1',
+                    'name' => 'Salon A',
+                    'capacity' => 20,
+                    'studioLocationId' => 'loc-1',
+                    'studioId' => self::STUDIO_ID,
+                    'createdAt' => '2025-07-01T00:00:00.000Z',
+                    'updatedAt' => '2025-07-01T00:00:00.000Z',
+                ],
+            ], JSON_THROW_ON_ERROR)),
+        ]);
+
+        $client = $this->makeClient($mock, $history, ['apiKey' => self::API_KEY]);
+        $room = $client->createRoom(['name' => 'Salon A', 'capacity' => 20, 'studioLocationId' => 'loc-1']);
+
+        /** @var \Psr\Http\Message\RequestInterface $request */
+        $request = $history[0]['request'];
+        $this->assertSame('POST', $request->getMethod());
+        $this->assertSame(self::BASE . '/v1/rooms', (string)$request->getUri());
+        $this->assertInstanceOf(\BailaYa\Dto\ManagementRoom::class, $room);
+        $this->assertSame('room-1', $room->id);
+        $this->assertSame('loc-1', $room->studioLocationId);
+    }
+
+    /** listLocations GETs /v1/locations. */
+    public function testListLocations(): void
+    {
+        $history = [];
+        $mock = new MockHandler([
+            new Response(200, ['Content-Type' => 'application/json'], json_encode([
+                'data' => [[
+                    'id' => 'loc-1',
+                    'name' => 'Roma Nte. Studio',
+                    'addressLine1' => 'Mérida 124',
+                    'isPrimary' => true,
+                ]],
+                'pagination' => ['limit' => 100, 'offset' => 0, 'count' => 1],
+            ], JSON_THROW_ON_ERROR)),
+        ]);
+
+        $client = $this->makeClient($mock, $history, ['apiKey' => self::API_KEY]);
+        $locations = $client->listLocations();
+
+        /** @var \Psr\Http\Message\RequestInterface $request */
+        $request = $history[0]['request'];
+        $this->assertSame('GET', $request->getMethod());
+        $this->assertSame(self::BASE . '/v1/locations', (string)$request->getUri());
+        $this->assertCount(1, $locations);
+        $this->assertInstanceOf(\BailaYa\Dto\StudioLocation::class, $locations[0]);
+        $this->assertTrue($locations[0]->isPrimary);
+    }
+
+    /** updateLocation can promote a location to primary. */
+    public function testPromoteLocationToPrimary(): void
+    {
+        $history = [];
+        $mock = new MockHandler([
+            new Response(200, ['Content-Type' => 'application/json'], json_encode([
+                'data' => ['id' => 'loc-2', 'name' => 'Condesa', 'isPrimary' => true],
+            ], JSON_THROW_ON_ERROR)),
+        ]);
+
+        $client = $this->makeClient($mock, $history, ['apiKey' => self::API_KEY]);
+        $location = $client->updateLocation('loc-2', ['isPrimary' => true]);
+
+        /** @var \Psr\Http\Message\RequestInterface $request */
+        $request = $history[0]['request'];
+        $this->assertSame('PATCH', $request->getMethod());
+        $this->assertSame(self::BASE . '/v1/locations/loc-2', (string)$request->getUri());
+        $this->assertSame(['isPrimary' => true], json_decode((string)$request->getBody(), true));
+        $this->assertTrue($location->isPrimary);
+    }
 }

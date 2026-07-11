@@ -14,6 +14,8 @@ use BailaYa\Dto\StudioPackage as StudioPackageDto;
 use BailaYa\Dto\StudioClass as StudioClassDto;
 use BailaYa\Dto\StudioEvent as StudioEventDto;
 use BailaYa\Dto\StudioProfile as StudioProfileDto;
+use BailaYa\Dto\StudioLocation as StudioLocationDto;
+use BailaYa\Dto\ManagementRoom as ManagementRoomDto;
 use BailaYa\Dto\UserProfile as UserProfileDto;
 use BailaYa\Support\Date;
 use Dotenv\Dotenv;
@@ -295,6 +297,20 @@ final class Client
             $out[] = InstructorDto::fromRaw($raw);
         }
         return $out;
+    }
+
+    /**
+     * Retrieves the studio's locations (public, no authentication), primary
+     * first, then the rest alphabetically.
+     *
+     * @return list<StudioLocationDto>
+     */
+    public function getLocations(?string $overrideId = null): array
+    {
+        $id = $this->requireStudioId($overrideId);
+        $url = rtrim($this->baseUrl, '/') . "/public/studio/{$id}/locations";
+        $rawList = $this->getJson($url)['data'];
+        return array_map([StudioLocationDto::class, 'fromRaw'], (array)$rawList);
     }
 
     /** @return list<StudioClassDto> */
@@ -737,6 +753,103 @@ final class Client
     public function deletePackage(string $id): mixed
     {
         return $this->unwrap($this->sendJson('DELETE', $this->v1('/packages/' . rawurlencode($id)), null, true)['data']);
+    }
+
+    /** ---------------- Management API: Rooms (/v1/rooms) ---------------- */
+
+    /**
+     * @param array<string,mixed> $params Optional `limit` / `offset`.
+     * @return list<ManagementRoomDto>
+     */
+    public function listRooms(array $params = []): array
+    {
+        $rows = $this->unwrap($this->getJson($this->withQuery($this->v1('/rooms'), $params), true)['data']);
+        return array_map([ManagementRoomDto::class, 'fromRaw'], (array)$rows);
+    }
+
+    /**
+     * Expected `$input` keys: name, and optionally capacity, studioLocationId
+     * (defaults to the studio's primary location).
+     *
+     * @param array<string,mixed> $input
+     */
+    public function createRoom(array $input): ManagementRoomDto
+    {
+        $row = $this->unwrap($this->sendJson('POST', $this->v1('/rooms'), $input, true)['data']);
+        return ManagementRoomDto::fromRaw((array)$row);
+    }
+
+    public function getRoom(string $id): ManagementRoomDto
+    {
+        $row = $this->unwrap($this->getJson($this->v1('/rooms/' . rawurlencode($id)), true)['data']);
+        return ManagementRoomDto::fromRaw((array)$row);
+    }
+
+    /** @param array<string,mixed> $input */
+    public function updateRoom(string $id, array $input): ManagementRoomDto
+    {
+        $row = $this->unwrap($this->sendJson('PATCH', $this->v1('/rooms/' . rawurlencode($id)), $input, true)['data']);
+        return ManagementRoomDto::fromRaw((array)$row);
+    }
+
+    /** @return mixed The decoded `data` payload. */
+    public function deleteRoom(string $id): mixed
+    {
+        return $this->unwrap($this->sendJson('DELETE', $this->v1('/rooms/' . rawurlencode($id)), null, true)['data']);
+    }
+
+    /** ---------------- Management API: Locations (/v1/locations) ---------------- */
+
+    /**
+     * Lists the active studio's locations (primary first).
+     *
+     * @return list<StudioLocationDto>
+     */
+    public function listLocations(): array
+    {
+        $rows = $this->unwrap($this->getJson($this->v1('/locations'), true)['data']);
+        return array_map([StudioLocationDto::class, 'fromRaw'], (array)$rows);
+    }
+
+    /**
+     * Expected `$input` keys: name, and optionally addressLine1, addressLine2
+     * (Suite/Unit/Floor), city, state, postalCode, country, latitude, longitude,
+     * isPrimary.
+     *
+     * @param array<string,mixed> $input
+     */
+    public function createLocation(array $input): StudioLocationDto
+    {
+        $row = $this->unwrap($this->sendJson('POST', $this->v1('/locations'), $input, true)['data']);
+        return StudioLocationDto::fromRaw((array)$row);
+    }
+
+    public function getLocation(string $id): StudioLocationDto
+    {
+        $row = $this->unwrap($this->getJson($this->v1('/locations/' . rawurlencode($id)), true)['data']);
+        return StudioLocationDto::fromRaw((array)$row);
+    }
+
+    /**
+     * Updates a location and/or promotes it to primary (pass `isPrimary => true`).
+     *
+     * @param array<string,mixed> $input
+     */
+    public function updateLocation(string $id, array $input): StudioLocationDto
+    {
+        $row = $this->unwrap($this->sendJson('PATCH', $this->v1('/locations/' . rawurlencode($id)), $input, true)['data']);
+        return StudioLocationDto::fromRaw((array)$row);
+    }
+
+    /**
+     * Deletes a non-primary location, reassigning its rooms/classes to the
+     * primary. Deleting the primary location fails.
+     *
+     * @return mixed The decoded `data` payload.
+     */
+    public function deleteLocation(string $id): mixed
+    {
+        return $this->unwrap($this->sendJson('DELETE', $this->v1('/locations/' . rawurlencode($id)), null, true)['data']);
     }
 }
 
