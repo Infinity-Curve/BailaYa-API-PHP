@@ -293,6 +293,106 @@ final class ClientManagementTest extends TestCase
     }
 
     /** listLocations GETs /v1/locations. */
+    /** A student's linked login account is surfaced when the server sends one. */
+    public function testListStudentsExposesLinkedUser(): void
+    {
+        $mock = new MockHandler([
+            new Response(200, ['Content-Type' => 'application/json'], json_encode([
+                'data' => [
+                    [
+                        'id' => 'stu-1',
+                        'name' => 'Ana',
+                        'lastname' => 'García',
+                        'email' => 'ana@example.com',
+                        'level' => 'Beginner',
+                        'status' => 'active',
+                        'userId' => 'user-1',
+                        'user' => [
+                            'id' => 'user-1',
+                            'name' => 'Ana',
+                            'lastname' => 'García',
+                            'email' => 'ana@example.com',
+                        ],
+                        'studioId' => self::STUDIO_ID,
+                        'createdAt' => '2026-07-01T00:00:00.000Z',
+                        'updatedAt' => '2026-07-01T00:00:00.000Z',
+                    ],
+                    [
+                        // A studio-created student who has never registered: the
+                        // server omits `user` entirely.
+                        'id' => 'stu-2',
+                        'name' => 'Bob',
+                        'lastname' => 'Jones',
+                        'email' => 'bob@example.com',
+                        'level' => 'Beginner',
+                        'status' => 'active',
+                        'userId' => null,
+                        'studioId' => self::STUDIO_ID,
+                        'createdAt' => '2026-07-01T00:00:00.000Z',
+                        'updatedAt' => '2026-07-01T00:00:00.000Z',
+                    ],
+                ],
+                'pagination' => ['limit' => 100, 'offset' => 0, 'count' => 2],
+            ], JSON_THROW_ON_ERROR)),
+        ]);
+
+        $client = $this->makeClient($mock, $history, ['apiKey' => self::API_KEY]);
+        $students = $client->listStudents();
+
+        $this->assertSame('user-1', $students[0]->userId);
+        $this->assertIsArray($students[0]->user);
+        $this->assertSame('ana@example.com', $students[0]->user['email']);
+
+        // No linked account → null, not a missing property.
+        $this->assertNull($students[1]->userId);
+        $this->assertNull($students[1]->user);
+    }
+
+    /** listStudioTypes returns the ids createClass() needs as studioTypeId. */
+    public function testListStudioTypes(): void
+    {
+        $history = [];
+        $mock = new MockHandler([
+            new Response(200, ['Content-Type' => 'application/json'], json_encode([
+                'data' => [
+                    [
+                        'id' => 'st-1',
+                        'name' => 'Salsa',
+                        'description' => '{"en":"Salsa classes"}',
+                        'image' => null,
+                        'isVisibleOnWeb' => true,
+                        'studioId' => self::STUDIO_ID,
+                    ],
+                    [
+                        'id' => 'st-2',
+                        'name' => 'Bachata',
+                        'description' => null,
+                        'image' => null,
+                        'isVisibleOnWeb' => false,
+                        'studioId' => self::STUDIO_ID,
+                    ],
+                ],
+                'pagination' => ['limit' => 100, 'offset' => 0, 'count' => 2],
+            ], JSON_THROW_ON_ERROR)),
+        ]);
+
+        $client = $this->makeClient($mock, $history, ['apiKey' => self::API_KEY]);
+        $types = $client->listStudioTypes(['limit' => 100]);
+
+        /** @var \Psr\Http\Message\RequestInterface $request */
+        $request = $history[0]['request'];
+        $this->assertSame('GET', $request->getMethod());
+        $this->assertSame(self::BASE . '/v1/studio-types?limit=100', (string)$request->getUri());
+        $this->assertSame('Bearer ' . self::API_KEY, $request->getHeaderLine('Authorization'));
+
+        $this->assertCount(2, $types);
+        $this->assertInstanceOf(\BailaYa\Dto\ManagementStudioType::class, $types[0]);
+        $this->assertSame('st-1', $types[0]->id);
+        $this->assertSame('Salsa', $types[0]->name);
+        // Types hidden from the public site are still listed here.
+        $this->assertFalse($types[1]->isVisibleOnWeb);
+    }
+
     public function testListLocations(): void
     {
         $history = [];

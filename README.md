@@ -137,12 +137,28 @@ $client->logout();   // revoke the session and clear stored tokens
 
 ### Managing classes
 
+A class is created with a `studioTypeId` — the id of one of the studio's dance
+types. `listStudioTypes()` is the only endpoint that returns those ids (the
+public studio profile carries names but no ids). Names are unique per studio, so
+matching on name is safe:
+
+```php
+$types = $client->listStudioTypes();
+$salsa = null;
+foreach ($types as $type) {
+    if (strcasecmp($type->name, 'Salsa') === 0) { $salsa = $type; break; }
+}
+```
+
+Omit `studioTypeId` to create an **event** instead of a class.
+
 ```php
 // Creating a class may produce several occurrences (weekly recurrence),
 // so createClass() returns a LIST of classes.
 $created = $client->createClass([
     'name'         => 'Salsa Level 1',
     'discipline'   => 'Salsa',
+    'studioTypeId' => $salsa->id,
     'level'        => 'Beginner',
     'startTime'    => '18:00',
     'endTime'      => '19:00',
@@ -182,6 +198,14 @@ $package = $client->createPackage([
     'sessions'       => 10,
     'durationMonths' => 3,
 ]);
+```
+
+`deletePackage()` throws when the package still has **active subscribers** —
+deleting it would erase what they paid for. Deactivate it instead, which stops
+new sales but leaves existing subscriptions intact:
+
+```php
+$client->updatePackage($package->id, ['isActive' => false]);
 ```
 
 ### Managing rooms and locations

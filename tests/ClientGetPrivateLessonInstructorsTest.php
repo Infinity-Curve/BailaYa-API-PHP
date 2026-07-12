@@ -155,7 +155,9 @@ final class ClientGetPrivateLessonInstructorsTest extends TestCase
         $this->assertCount(2, $serialized[0]['availability']);
         $this->assertCount(2, $serialized[0]['pricing']);
         $this->assertSame(1, $serialized[0]['availability'][0]['dayOfWeek']);
-        $this->assertSame(65.0, $serialized[0]['pricing'][1]['price']);
+        // json_encode drops the ".0" from a whole float (serialize_precision=-1),
+        // so 65.0 decodes back as int(65). Compare the value, not the JSON type.
+        $this->assertSame(65.0, (float)$serialized[0]['pricing'][1]['price']);
     }
 
     public function testThrowsOnApiError(): void

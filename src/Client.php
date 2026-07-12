@@ -16,6 +16,7 @@ use BailaYa\Dto\StudioEvent as StudioEventDto;
 use BailaYa\Dto\StudioProfile as StudioProfileDto;
 use BailaYa\Dto\StudioLocation as StudioLocationDto;
 use BailaYa\Dto\ManagementRoom as ManagementRoomDto;
+use BailaYa\Dto\ManagementStudioType as ManagementStudioTypeDto;
 use BailaYa\Dto\UserProfile as UserProfileDto;
 use BailaYa\Support\Date;
 use Dotenv\Dotenv;
@@ -753,6 +754,28 @@ final class Client
     public function deletePackage(string $id): mixed
     {
         return $this->unwrap($this->sendJson('DELETE', $this->v1('/packages/' . rawurlencode($id)), null, true)['data']);
+    }
+
+    /** ---------------- Management API: Rooms (/v1/rooms) ---------------- */
+
+    /** ---------- Management API: Studio types (/v1/studio-types) ---------- */
+
+    /**
+     * Lists the studio's dance types, ordered by name.
+     *
+     * This is the only endpoint that returns a dance type's `id`, which
+     * `createClass()` requires as `studioTypeId` — the public studio profile
+     * carries names but no ids. Includes types hidden from the public site.
+     *
+     * Read-only, and guarded by the `classes:read` scope rather than one of its own.
+     *
+     * @param array<string,mixed> $params Optional `limit` / `offset`.
+     * @return list<ManagementStudioTypeDto>
+     */
+    public function listStudioTypes(array $params = []): array
+    {
+        $rows = $this->unwrap($this->getJson($this->withQuery($this->v1('/studio-types'), $params), true)['data']);
+        return array_map([ManagementStudioTypeDto::class, 'fromRaw'], (array)$rows);
     }
 
     /** ---------------- Management API: Rooms (/v1/rooms) ---------------- */

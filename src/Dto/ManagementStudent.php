@@ -8,6 +8,11 @@ namespace BailaYa\Dto;
  */
 final class ManagementStudent implements \JsonSerializable
 {
+    /**
+     * @param array{id:string,name:?string,lastname:?string,email:?string}|null $user
+     *        The linked login account, when the student has one. Omitted by the
+     *        server for students who have never registered.
+     */
     public function __construct(
         public readonly string $id,
         public readonly string $name,
@@ -20,6 +25,7 @@ final class ManagementStudent implements \JsonSerializable
         public readonly string $studioId,
         public readonly string $createdAt,
         public readonly string $updatedAt,
+        public readonly ?array $user = null,
     ) {}
 
     /** @param array<string,mixed> $raw */
@@ -37,6 +43,7 @@ final class ManagementStudent implements \JsonSerializable
             studioId:  (string)($raw['studioId'] ?? ''),
             createdAt: (string)($raw['createdAt'] ?? ''),
             updatedAt: (string)($raw['updatedAt'] ?? ''),
+            user:      isset($raw['user']) && is_array($raw['user']) ? $raw['user'] : null,
         );
     }
 
@@ -51,6 +58,7 @@ final class ManagementStudent implements \JsonSerializable
             'level'     => $this->level,
             'status'    => $this->status,
             'userId'    => $this->userId,
+            'user'      => $this->user,
             'studioId'  => $this->studioId,
             'createdAt' => $this->createdAt,
             'updatedAt' => $this->updatedAt,
