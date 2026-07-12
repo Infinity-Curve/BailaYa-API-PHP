@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace BailaYa\Dto;
 
 use BailaYa\Support\Json;
+use BailaYa\Support\Phone;
 
 final class StudioProfile implements \JsonSerializable
 {
@@ -30,6 +31,27 @@ final class StudioProfile implements \JsonSerializable
         public readonly ?string $whatsappPhone,
         public readonly array $studioTypes,
         public readonly array $locations = [],
+        /**
+         * `phone` normalized to a dialable E.164 string (e.g. "+525534669220"), or
+         * null when the studio has no phone number.
+         *
+         * Use this for `tel:` links: studios often store the number without a leading
+         * "+", which a dialer can misread as a national number and misdial. `phone` is
+         * left exactly as the studio typed it, so keep using that for display.
+         */
+        public readonly ?string $phoneE164 = null,
+        /**
+         * Whether the studio has any class in the upcoming window the classes endpoint
+         * serves. Use it to hide a "Classes" link that would lead to an empty page.
+         * Null on older API deployments, which callers should treat as "show it".
+         */
+        public readonly ?bool $hasUpcomingClasses = null,
+        /**
+         * Whether the studio has any event in the upcoming window the events endpoint
+         * serves. Use it to hide an "Events" link that would lead to an empty page.
+         * Null on older API deployments, which callers should treat as "show it".
+         */
+        public readonly ?bool $hasUpcomingEvents = null,
     ) {}
 
     /** @param array<string,mixed> $raw RawStudioProfile */
@@ -64,6 +86,9 @@ final class StudioProfile implements \JsonSerializable
             whatsappPhone: $raw['whatsappPhone'] ?? null,
             studioTypes: $types,
             locations: $locations,
+            phoneE164: Phone::toE164($raw['phone'] ?? null, $raw['country'] ?? null),
+            hasUpcomingClasses: isset($raw['hasUpcomingClasses']) ? (bool)$raw['hasUpcomingClasses'] : null,
+            hasUpcomingEvents: isset($raw['hasUpcomingEvents']) ? (bool)$raw['hasUpcomingEvents'] : null,
         );
     }
 
@@ -88,6 +113,9 @@ final class StudioProfile implements \JsonSerializable
             'whatsappPhone' => $this->whatsappPhone,
             'studioTypes' => $this->studioTypes,
             'locations' => $this->locations,
+            'phoneE164' => $this->phoneE164,
+            'hasUpcomingClasses' => $this->hasUpcomingClasses,
+            'hasUpcomingEvents' => $this->hasUpcomingEvents,
         ];
     }
 }
