@@ -18,6 +18,10 @@ use BailaYa\Dto\StudioLocation as StudioLocationDto;
 use BailaYa\Dto\ManagementRoom as ManagementRoomDto;
 use BailaYa\Dto\ManagementStudioType as ManagementStudioTypeDto;
 use BailaYa\Dto\UserProfile as UserProfileDto;
+use BailaYa\Dto\PublicClass as PublicClassDto;
+use BailaYa\Dto\PublicPackage as PublicPackageDto;
+use BailaYa\Dto\PublicInstructor as PublicInstructorDto;
+use BailaYa\Dto\PaymentStatus as PaymentStatusDto;
 use BailaYa\Support\Date;
 use Dotenv\Dotenv;
 use GuzzleHttp\Client as HttpClient;
@@ -430,6 +434,57 @@ final class Client
             $out[] = PrivateLessonQuestionDto::fromRaw($raw);
         }
         return $out;
+    }
+
+    /**
+     * Retrieves full details for a single bookable class, including live
+     * enrolment counts. Intended for checkout / booking-confirmation pages.
+     */
+    public function getPublicClass(string $classId): PublicClassDto
+    {
+        if ($classId === '') {
+            throw new \InvalidArgumentException('getPublicClass requires a classId argument');
+        }
+        $url = rtrim($this->baseUrl, '/') . '/public/classes/' . rawurlencode($classId);
+        return PublicClassDto::fromRaw($this->getJson($url)['data']);
+    }
+
+    /** Retrieves full details for a single package. Intended for checkout pages. */
+    public function getPublicPackage(string $packageId): PublicPackageDto
+    {
+        if ($packageId === '') {
+            throw new \InvalidArgumentException('getPublicPackage requires a packageId argument');
+        }
+        $url = rtrim($this->baseUrl, '/') . '/public/packages/' . rawurlencode($packageId);
+        return PublicPackageDto::fromRaw($this->getJson($url)['data']);
+    }
+
+    /**
+     * Retrieves a single instructor's private-lesson availability and pricing
+     * with studio context. The API returns 404 if the instructor has no active
+     * availability or pricing.
+     */
+    public function getPublicInstructor(string $instructorId): PublicInstructorDto
+    {
+        if ($instructorId === '') {
+            throw new \InvalidArgumentException('getPublicInstructor requires an instructorId argument');
+        }
+        $url = rtrim($this->baseUrl, '/') . '/public/instructors/' . rawurlencode($instructorId);
+        return PublicInstructorDto::fromRaw($this->getJson($url)['data']);
+    }
+
+    /**
+     * Retrieves a payment and its associated booking status. Accepts either the
+     * internal payment ID or a MercadoPago payment ID. Useful for a post-checkout
+     * status check.
+     */
+    public function getPaymentStatus(string $paymentId): PaymentStatusDto
+    {
+        if ($paymentId === '') {
+            throw new \InvalidArgumentException('getPaymentStatus requires a paymentId argument');
+        }
+        $url = rtrim($this->baseUrl, '/') . '/public/payments/' . rawurlencode($paymentId);
+        return PaymentStatusDto::fromRaw($this->getJson($url)['data']);
     }
 
     /** ---------------- Management API: Auth (/v1/auth) ---------------- */

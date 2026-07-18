@@ -389,6 +389,22 @@ Fetches upcoming classes for a specific dance type (e.g., "Salsa", "Bachata") wi
 
 Fetches upcoming events for a studio within a 7-day window.
 
+### `getPublicClass(string $classId): PublicClass`
+
+Fetches full details for a single bookable class, including live enrolment counts (`enrolledCount`, `availableSpots`). Intended for checkout / booking-confirmation pages. The `date` is a `DateTimeImmutable`.
+
+### `getPublicPackage(string $packageId): PublicPackage`
+
+Fetches full details for a single package. Intended for checkout pages.
+
+### `getPublicInstructor(string $instructorId): PublicInstructor`
+
+Fetches a single instructor's private-lesson availability and pricing with studio context. Throws (404) if the instructor has no active availability or pricing.
+
+### `getPaymentStatus(string $paymentId): PaymentStatus`
+
+Fetches a payment and its associated booking status (`enrolled` / `waitlisted` / `unknown`). Accepts either the internal payment ID or a MercadoPago payment ID. Payment `createdAt` / `paidAt` are `DateTimeImmutable`. Useful for a post-checkout status check.
+
 ---
 
 ## DTOs
